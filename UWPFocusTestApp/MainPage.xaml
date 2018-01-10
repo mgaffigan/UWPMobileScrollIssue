@@ -1,0 +1,35 @@
+﻿<Page
+    x:Class="UWPFocusTestApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWPFocusTestApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton Icon="Save" x:Name="btSave" Content="Save" />
+        </CommandBar>
+    </Page.BottomAppBar>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <ScrollViewer HorizontalScrollMode="Disabled" VerticalScrollMode="Auto">
+            <StackPanel Orientation="Vertical">
+                <TextBox Header="a" />
+                <TextBox Header="b" />
+                <TextBox Header="c" />
+                <TextBox Header="d" />
+                <TextBox Header="e" />
+                <TextBox Header="f" />
+                <TextBox Header="g" />
+                <TextBox Header="h" />
+                <TextBox Header="i" />
+                <TextBox Header="j" />
+                <TextBox Header="k" />
+                <TextBox Header="l" />
+                <TextBox Header="m" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
