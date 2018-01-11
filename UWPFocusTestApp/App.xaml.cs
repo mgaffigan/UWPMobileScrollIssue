@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define WORKAROUND
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,7 +9,9 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.System.Profile;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -46,14 +50,17 @@ namespace UWPFocusTestApp
                 this.DebugSettings.EnableFrameRateCounter = true;
             }
 #endif
-            Frame rootFrame = (Window.Current.Content as Border)?.Child as Frame;
+            Frame rootFrame = Window.Current.Content as Frame;
 
             // Do not repeat app initialization when the Window already has content,
             // just ensure that the window is active
             if (rootFrame == null)
             {
                 // Create a Frame to act as the navigation context and navigate to the first page
-                rootFrame = new Frame();
+                rootFrame = new Frame()
+                {
+                    Style = (Style)Resources["FrameStyle1"]
+                };
 
                 rootFrame.NavigationFailed += OnNavigationFailed;
 
@@ -63,12 +70,14 @@ namespace UWPFocusTestApp
                 }
 
                 // Place the frame in the current Window
-                Window.Current.Content = new Border()
+                Window.Current.Content = rootFrame;
+
+#if WORKAROUND
+                if (AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Mobile")
                 {
-                    Padding = new Windows.UI.Xaml.Thickness(20),
-                    Background = new SolidColorBrush(Colors.Red),
-                    Child = rootFrame
-                };
+                    InputPane.GetForCurrentView().Showing += InputPane_Showing;
+                }
+#endif
             }
 
             if (e.PrelaunchActivated == false)
@@ -84,6 +93,55 @@ namespace UWPFocusTestApp
                 Window.Current.Activate();
             }
         }
+
+#if WORKAROUND
+        private void InputPane_Showing(InputPane sender, InputPaneVisibilityEventArgs args)
+        {
+            // we only need to hook once
+            InputPane.GetForCurrentView().Showing -= InputPane_Showing;
+
+            var frame = (Frame)Window.Current.Content;
+
+            // Find root ScrollViewer
+            DependencyObject cNode = frame;
+            while (true)
+            {
+                var parent = VisualTreeHelper.GetParent(cNode);
+                if (parent == null)
+                {
+                    break;
+                }
+                cNode = parent;
+            }
+            var rootScrollViewer = (ScrollViewer)cNode;
+
+            // Hook ViewChanged to update scroll offset
+            bool hasBeenAdjusted = false;
+            rootScrollViewer.ViewChanged += (_1, svargs) =>
+            {
+                // once the scroll is removed, clear flag
+                if (rootScrollViewer.VerticalOffset == 0)
+                {
+                    hasBeenAdjusted = false;
+                    return;
+                }
+                // if we've already adjusted, bail.
+                else if (hasBeenAdjusted)
+                {
+                    return;
+                }
+
+                var appBar = ((Page)frame.Content)?.BottomAppBar;
+                if (appBar == null)
+                {
+                    return;
+                }
+
+                hasBeenAdjusted = true;
+                rootScrollViewer.ChangeView(null, rootScrollViewer.VerticalOffset + appBar.ActualHeight, null);
+            };
+        }
+#endif
 
         /// <summary>
         /// Invoked when Navigation to a certain page fails
